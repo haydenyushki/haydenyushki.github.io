@@ -17,6 +17,11 @@
     'Your email app should open with a subscription request. If it does not, write to ': 'Должно открыться почтовое приложение с запросом на подписку. Если этого не произошло, напишите на ',
     'Please add me to the Minsk Dialogue mailing list.': 'Прошу добавить меня в рассылку «Минского диалога».', 'Name: ': 'Имя: ',
     'Thank you! Your message has reached the hosts.': 'Спасибо! Ваше сообщение получено.',
+    'Thank you for subscribing to the Minsk Dialogue newsletter!': 'Спасибо за подписку на рассылку «Минского диалога»!',
+    'We will send news, research and events to ': 'Мы будем присылать новости, исследования и анонсы мероприятий на адрес ',
+    'This is the test copy of the website, so the address is not saved. On the real website it goes straight to the subscriber list in the admin panel.':
+      'Это тестовая копия сайта, поэтому адрес не сохраняется. На настоящем сайте он сразу попадает в список подписчиков в админ-панели.',
+    'Close': 'Закрыть',
     'The message could not be sent. Please try again later or write to ': 'Не удалось отправить сообщение. Попробуйте позже или напишите на ',
     'Your email app should open with your message. If it does not, write to ': 'Должно открыться почтовое приложение с вашим сообщением. Если этого не произошло, напишите на '
   } : {};
@@ -293,7 +298,23 @@
     });
   }
 
-  /* Newsletter sign-up */
+  /* Newsletter sign-up: the admin panel saves it (/api/subscribe) and a window thanks the reader */
+  function thanks(email, test) {
+    var d = document.createElement('dialog');
+    d.className = 'thanks';
+    d.setAttribute('aria-labelledby', 'thanks-h');
+    d.innerHTML = '<h2 id="thanks-h" class="thanks__h">' + tr('Thank you for subscribing to the Minsk Dialogue newsletter!') + '</h2>' +
+      '<p class="thanks__text">' + tr('We will send news, research and events to ') + '<b></b>.</p>' +
+      (test ? '<p class="thanks__note">' + tr('This is the test copy of the website, so the address is not saved. On the real website it goes straight to the subscriber list in the admin panel.') + '</p>' : '') +
+      '<button class="thanks__btn" type="button">' + tr('Close') + '</button>';
+    $('b', d).textContent = email;
+    document.body.appendChild(d);
+    $('.thanks__btn', d).addEventListener('click', function () { d.close(); });
+    d.addEventListener('close', function () { d.remove(); });
+    d.addEventListener('click', function (e) { if (e.target === d) d.close(); });     // a click outside the box
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    $('.thanks__btn', d).focus();
+  }
   $$('form[data-newsletter]').forEach(function (form) {
     var msg = $('.newsletter__msg', form);
     form.addEventListener('submit', function (e) {
@@ -303,6 +324,7 @@
       if (!form.checkValidity()) { form.reportValidity(); return; }
       var endpoint = form.getAttribute('data-endpoint');
       var done = function (ok, text) { msg.hidden = false; msg.innerHTML = text; if (ok) form.reset(); };
+      if (!endpoint && form.hasAttribute('data-test-copy')) { msg.hidden = true; form.reset(); thanks(email, true); return; }
       if (!endpoint) {
         var body = encodeURIComponent(tr('Please add me to the Minsk Dialogue mailing list.')) + '%0D%0A%0D%0A' + encodeURIComponent(tr('Name: ')) +
           encodeURIComponent(((data.get('Name') || '') + ' ' + (data.get('Surname') || '')).trim()) + '%0D%0AE-mail: ' + encodeURIComponent(email);
@@ -314,7 +336,7 @@
       fetch(endpoint, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
         .then(function (r) {
           if (!r.ok) throw new Error(r.status);
-          done(true, tr('Your e-mail has been added to our list. We will keep you updated on the most interesting news, publications and events of the Minsk Dialogue.'));
+          msg.hidden = true; form.reset(); thanks(email, false);
         })
         .catch(function () {
           done(false, tr('The subscription could not be saved. Please try again later or write to ') + '<a href="mailto:' +

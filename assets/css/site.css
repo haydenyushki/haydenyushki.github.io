@@ -252,6 +252,15 @@ h1, h2, h3 { text-wrap: balance; }
   .newsletter__form input[type="email"], .newsletter__form button { grid-column: 1 / -1; }
 }
 .newsletter__msg a { color: var(--link); text-decoration: underline; }
+/* thank-you window after signing up */
+.thanks { width: min(460px, calc(100vw - 32px)); border: 0; border-top: 4px solid var(--accent); border-radius: 3px; padding: 28px 28px 24px; background: var(--white); color: var(--ink); box-shadow: 0 24px 60px rgba(14, 47, 87, .28); }
+.thanks::backdrop { background: rgba(14, 31, 52, .45); }
+.thanks__h { font-family: var(--serif); font-weight: 600; font-size: 22px; line-height: 1.3; }
+.thanks__text { margin-top: 12px; font-size: 16px; line-height: 1.55; color: var(--ink-soft); overflow-wrap: anywhere; }
+.thanks__text b { color: var(--ink); font-weight: 500; }
+.thanks__note { margin-top: 12px; padding: 10px 12px; background: var(--tint); border-radius: 3px; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+.thanks__btn { margin-top: 20px; height: 42px; padding: 0 22px; background: var(--accent); color: var(--white); border: 0; border-radius: 3px; font-weight: 500; font-size: 15px; cursor: pointer; }
+.thanks__btn:hover { background: var(--accent-dark); }
 
 /* ---------- Footer ---------- */
 .footer { background: var(--navy-deep); color: var(--pale); }
@@ -651,10 +660,13 @@ a, button, .chip { transition: color .2s, background-color .2s, border-color .2s
 .ev-main .ev-sec-h { margin-bottom: 8px; }
 .agenda { border-top: 1px solid var(--ink); }
 .agenda > li { display: flex; gap: 24px; padding: 16px 0; border-bottom: 1px solid var(--line); }
-.agenda__time { flex: 0 0 96px; font-weight: 500; }
+.agenda__time { flex: 0 0 112px; font-weight: 500; }
 .agenda__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .agenda__title { font-family: var(--serif); font-weight: 600; font-size: 17px; }
 .agenda__who { font-size: 15px; color: var(--muted); }
+.agenda__desc { font-size: 15px; line-height: 1.55; color: var(--ink-soft); }
+.agenda__speakers { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; font-size: 15px; line-height: 1.5; color: var(--muted); }
+.agenda__name { font-weight: 500; color: var(--ink); }
 @media (max-width: 560px) { .agenda > li { gap: 14px; } .agenda__time { flex-basis: 56px; } }
 .ev-sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 16px; }
 .ev-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }

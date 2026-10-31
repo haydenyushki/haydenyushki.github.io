@@ -588,6 +588,36 @@
       sortable(rows, '[data-row]');
     }
   });
+  /* ---------- an event's programme: sessions, each with any number of speakers ---------- */
+  $$('[data-agenda]').forEach(function (box) {
+    var list = $('[data-sessions]', box), out = $('input[name="agenda_json"]', box), form = box.closest('form');
+    function add(tmplSel, into) {
+      var node = $(tmplSel, box).content.firstElementChild.cloneNode(true);
+      into.appendChild(node);
+      $$('textarea[data-autosize]', node).forEach(function (t) { t.addEventListener('input', function () { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }); });
+      var first = $('input:not([type=time]), input', node); if (first) first.focus();
+      window.markDirty();
+      return node;
+    }
+    box.addEventListener('click', function (e) {
+      if (e.target.closest('[data-add-session]')) { var s = add('template[data-session-template]', list); add('template[data-speaker-template]', $('[data-speakers]', s)); $('[data-k="start"]', s).focus(); }
+      else if (e.target.closest('[data-add-speaker]')) add('template[data-speaker-template]', $('[data-speakers]', e.target.closest('[data-session]')));
+      else if (e.target.closest('[data-remove-speaker]')) { e.target.closest('[data-speaker]').remove(); window.markDirty(); }
+      else if (e.target.closest('[data-remove-session]')) { e.target.closest('[data-session]').remove(); window.markDirty(); }
+    });
+    list.addEventListener('mousedown', function (e) { var s = e.target.closest('[data-session]'); if (s) s.draggable = !!e.target.closest('[data-handle]'); });
+    sortable(list, '[data-session]');
+    function val(root, k) { var el = $('[data-k="' + k + '"]', root); return el ? el.value.trim() : ''; }
+    function write() {
+      out.value = JSON.stringify($$('[data-session]', list).map(function (s) {
+        return { start: val(s, 'start'), end: val(s, 'end'), session: val(s, 'session'), description: val(s, 'description'),
+                 speakers: $$('[data-speaker]', s).map(function (p) { return { name: val(p, 'name'), bio: val(p, 'bio') }; })
+                   .filter(function (p) { return p.name || p.bio; }) };
+      }));
+    }
+    if (form) form.addEventListener('submit', write, true);
+  });
+
   $$('[data-sortable-list]').forEach(function (list) {
     var url = list.getAttribute('data-order-url');
     list.addEventListener('click', function (e) { if (list.classList.contains('was-dragged')) { e.preventDefault(); list.classList.remove('was-dragged'); } });

@@ -361,3 +361,13 @@ body.plain{background:#F4F6F9;font-family:Roboto,Arial,sans-serif;font-size:14px
 .about-sec.dragging{opacity:.5}
 
 .badge-n{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:#C2382E;color:#FFFFFF;font-size:12px;font-weight:600}
+
+/* an event's programme: sessions with their speakers */
+.sessions{display:flex;flex-direction:column;gap:12px}
+.sess{border:1px solid #E1E7EF;border-radius:6px;padding:12px;background:#FBFCFD;display:flex;flex-direction:column;gap:8px}
+.sess.dragging{opacity:.5}
+.sess-top{display:flex;align-items:flex-end;gap:12px}
+.sess-time{display:flex;flex-direction:column;gap:4px;width:130px}
+.spk-h{margin-top:4px}
+.spk{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr) 32px;gap:8px;align-items:start;margin-bottom:6px}
+@media (max-width:700px){.spk{grid-template-columns:minmax(0,1fr) 32px}.spk textarea{grid-column:1}}
