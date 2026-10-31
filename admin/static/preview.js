@@ -29,7 +29,12 @@
     }
     if (action === '/admin/login') { location.href = '/admin/'; return; }
     if (action === '/admin/logout') { location.href = '/admin/login/'; return; }
-    if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') { toast(NOTE); return; }
+    if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') {
+      toast(NOTE);
+      var next = form.querySelector('input[name="_next"]');
+      if (next && next.value) setTimeout(function () { location.href = next.value; }, 900);
+      return;
+    }
     if (action === '/admin/search') { toast('Search is not part of this preview.'); return; }
     var pairs = [];
     new FormData(form).forEach(function (v, k) { if (typeof v === 'string') pairs.push([k, v]); });

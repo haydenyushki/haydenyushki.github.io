@@ -149,7 +149,7 @@
   (function () {
     var form = $('form[data-editor-form]'); if (!form) return;
     var key = form.getAttribute('data-entry-key'), lang = form.getAttribute('data-lang');
-    var KEEP = 'md-unsaved:', SKIP = /^(_csrf|_action|image|image_focus|cover|kind_sub)$/;
+    var KEEP = 'md-unsaved:', SKIP = /^(_csrf|_action|_next|image|image_focus|cover|kind_sub)$/, leavingByTab = false;
     function store() { try { return window.sessionStorage; } catch (e) { return null; } }
     var ss = store();
     function read(l) { try { return ss ? JSON.parse(ss.getItem(KEEP + key + ':' + l) || 'null') : null; } catch (e) { return null; } }
@@ -157,7 +157,7 @@
     // a new item gets its address when first saved: carry what was kept for it over to that address
     try {
       var made = ss && ss.getItem('md-created');
-      if (made && key.indexOf(':new-') < 0 && made.split(':')[0] === key.split(':')[0]) {
+      if (made && key.indexOf(':new-') < 0 && made.split(':')[0] === key.split(':')[0] && /[?&]msg=/.test(location.search)) {
         ['en', 'ru'].forEach(function (l) { var v = ss.getItem(KEEP + made + ':' + l); if (v) { ss.setItem(KEEP + key + ':' + l, v); ss.removeItem(KEEP + made + ':' + l); } });
       }
       if (ss) ss.removeItem('md-created');
@@ -213,7 +213,9 @@
         var chip = $('.lchip', a); if (chip) { chip.className = 'lchip lchip--unsaved'; chip.textContent = 'Unsaved changes'; }
       }
       a.addEventListener('click', function () {
-        if (l === lang || !dirty) return;
+        if (l === lang) return;
+        leavingByTab = true;
+        if (!dirty) return;
         try { if (ss) ss.setItem(KEEP + key + ':' + lang, JSON.stringify(snapshot())); } catch (e) { /* storage full or off */ }
         submitting = true;          // nothing is lost, so no "leave the page?" question
       });
@@ -221,35 +223,101 @@
     form.addEventListener('submit', function (e) {
       var b = e.submitter;
       if (b && b.getAttribute('formtarget') === '_blank') return;      // a preview, not a save
+      if (form.querySelector('input[name="_next"]')) { clearAll(); return; }      // saved on the way out of the editor
       drop(lang);
       try { if (ss && key.indexOf(':new-') > 0) ss.setItem('md-created', key); } catch (err) { /* storage off */ }
     });
-    // an empty version: start from the other language's text, or have Google translate it
-    var other = data('other-version');
-    if (form.hasAttribute('data-empty') && other && !kept) {
-      var box = note('<b>This ' + (lang === 'ru' ? 'Russian' : 'English') + ' version is empty.</b> Start from the ' + esc(other.name) + ' one: ' +
-        '<button type="button" class="link" data-copy-other>Copy the ' + esc(other.name) + ' text here</button> · ' +
-        '<button type="button" class="link" data-translate>Translate it with Google ↗</button>');
-      $('[data-copy-other]', box).addEventListener('click', function () {
+    // the other language's text (typing kept from its tab, else what is saved): copy it into an empty version, or
+    // have Google translate it (offered on every version that has another language to start from)
+    var otherLang = lang === 'ru' ? 'en' : 'ru', otherName = otherLang === 'ru' ? 'Russian' : 'English';
+    function source() {
+      var snap = read(otherLang), saved = data('other-version');
+      if (snap) {
+        var get = function (n) { var f = snap.fields.filter(function (x) { return x[0] === n; })[0]; return f ? f[1] : ''; };
+        if (get('title') || get('body')) return { title: get('title'), summary: get('summary'), body: get('body') };
+      }
+      return saved && saved.title ? saved : null;
+    }
+    function plainOf(src) {
+      var tmp = document.createElement('div'); tmp.innerHTML = (src.body || '').replace(/<\/(p|h2|h3|h4|li|blockquote)>/gi, '\n\n');
+      return [src.title, src.summary, tmp.textContent.replace(/\n{3,}/g, '\n\n').trim()].filter(Boolean).join('\n\n');
+    }
+    function translate(src, box) {
+      var text = plainOf(src), url = 'https://translate.google.com/?sl=' + otherLang + '&tl=' + lang + '&op=translate';
+      if (text.length <= 4800) { window.open(url + '&text=' + encodeURIComponent(text), '_blank', 'noopener'); return; }
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () {
+        box.insertAdjacentHTML('beforeend', '<p class="small" style="margin-top:6px">The text is long, so it is copied: paste it into Google Translate (it takes 5,000 characters at a time).</p>');
+      }).catch(function () { /* clipboard refused: Google Translate opens empty */ });
+      window.open(url, '_blank', 'noopener');
+    }
+    var src = source();
+    if (src) {
+      var titleEl = form.querySelector('[name="title"]'), docEl = $('[data-editor] .doc', form);
+      var empty = !(titleEl && titleEl.value.trim()) && !(docEl && docEl.textContent.trim());
+      var box = note(empty
+        ? '<b>This ' + (lang === 'ru' ? 'Russian' : 'English') + ' version is empty.</b> Start from the ' + otherName + ' one: ' +
+          '<button type="button" class="link" data-copy-other>Copy the ' + otherName + ' text here</button> · ' +
+          '<button type="button" class="link" data-translate>Translate it with Google ↗</button>'
+        : '<button type="button" class="link" data-translate>Translate the ' + otherName + ' version with Google ↗</button>');
+      if (!empty) box.className = 'lang-tools';
+      var copy = $('[data-copy-other]', box);
+      if (copy) copy.addEventListener('click', function () {
         var t = form.querySelector('[name="title"]'), s = form.querySelector('[name="summary"]'), b = form.querySelector('[data-editor] textarea[name="body"]');
-        if (t && !t.value.trim()) { t.value = other.title; t.dispatchEvent(new Event('input', { bubbles: true })); }
-        if (s && !s.value.trim()) s.value = other.summary;
-        if (b) { b.value = other.body; $('.doc', b.closest('[data-editor]')).innerHTML = other.body; }
+        if (t && !t.value.trim()) { t.value = src.title; t.dispatchEvent(new Event('input', { bubbles: true })); }
+        if (s && !s.value.trim()) s.value = src.summary || '';
+        if (b) { b.value = src.body || ''; $('.doc', b.closest('[data-editor]')).innerHTML = src.body || ''; }
         $$('textarea[data-autosize]', form).forEach(function (x) { x.style.height = 'auto'; x.style.height = (x.scrollHeight + 2) + 'px'; });
         dirty = true;
-        box.innerHTML = 'The ' + esc(other.name) + ' text is copied in. Translate it, then <b>Save</b>.';
+        box.innerHTML = 'The ' + otherName + ' text is copied in. Translate it, then <b>Save</b>. ' +
+          '<button type="button" class="link" data-translate>Translate it with Google ↗</button>';
+        $('[data-translate]', box).addEventListener('click', function () { translate(src, box); });
       });
-      $('[data-translate]', box).addEventListener('click', function () {
-        var tmp = document.createElement('div'); tmp.innerHTML = other.body.replace(/<\/(p|h2|h3|h4|li|blockquote)>/gi, '\n\n');
-        var text = [other.title, other.summary, tmp.textContent.replace(/\n{3,}/g, '\n\n').trim()].filter(Boolean).join('\n\n');
-        var url = 'https://translate.google.com/?sl=' + other.lang + '&tl=' + lang + '&op=translate';
-        if (text.length <= 4800) { window.open(url + '&text=' + encodeURIComponent(text), '_blank', 'noopener'); return; }
-        (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () {
-          box.insertAdjacentHTML('beforeend', '<p class="small" style="margin-top:6px">The text is long, so it is copied: paste it into Google Translate (it takes 5,000 characters at a time).</p>');
-        }).catch(function () { /* clipboard refused: Google Translate opens empty */ });
-        window.open(url, '_blank', 'noopener');
-      });
+      $('[data-translate]', box).addEventListener('click', function () { translate(src, box); });
     }
+
+    // leaving the editor: "Save draft" (or "Save changes"), "Discard changes" or "Keep editing". Typing that is
+    // discarded, or left behind by closing the tab, is not brought back: the next new item starts empty.
+    function clearAll() { ['en', 'ru'].forEach(drop); try { if (ss) ss.removeItem('md-created'); } catch (e) { /* storage off */ } }
+    window.addEventListener('pagehide', function () { if (!leavingByTab && !submitting) clearAll(); });
+    function pending() { return dirty || !!read(otherLang); }
+    function leave(url) {
+      var saveBtn = form.querySelector('button[name="_action"][value="save"]');
+      var elsewhere = !dirty && read(otherLang), tab = $('[data-ltab="' + otherLang + '"]', form);     // only the other version has typing
+      var d = document.createElement('dialog');
+      d.className = 'leave';
+      d.innerHTML = '<h2 class="leave__h">Leave without saving?</h2><p class="leave__p">' +
+        (elsewhere ? 'Your changes to the ' + otherName + ' version are not saved yet.' : 'Your changes to this item are not saved yet.') + '</p>' +
+        '<div class="leave__btns">' + (elsewhere && tab ? '<button type="button" class="btn pri" data-a="other">Open the ' + otherName + ' version</button>' :
+          '<button type="button" class="btn pri" data-a="save">' + esc(saveBtn ? saveBtn.textContent.trim() : 'Save') + '</button>') +
+        '<button type="button" class="btn sec" data-a="discard">Discard changes</button><button type="button" class="btn ghost" data-a="stay">Keep editing</button></div>';
+      document.body.appendChild(d);
+      d.addEventListener('close', function () { d.remove(); });
+      d.addEventListener('click', function (e) {
+        var a = e.target.closest('[data-a]'); if (!a) { if (e.target === d) d.close(); return; }
+        var act = a.getAttribute('data-a');
+        d.close();
+        if (act === 'other') { leavingByTab = true; location.href = tab.href; }
+        else if (act === 'save') {
+          var u = new URL(url, location.href), nx = form.querySelector('input[name="_next"]');
+          if (!nx) { nx = document.createElement('input'); nx.type = 'hidden'; nx.name = '_next'; form.appendChild(nx); }
+          nx.value = u.pathname + u.search;
+          if (saveBtn && form.requestSubmit) form.requestSubmit(saveBtn); else form.submit();
+        } else if (act === 'discard') {
+          dirty = false; submitting = true; clearAll();
+          location.href = url;
+        }
+      });
+      d.showModal();
+      $('.btn.pri', d).focus();
+    }
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href]');
+      if (!a || e.defaultPrevented || a.hasAttribute('data-ltab') || a.target === '_blank' || a.hasAttribute('download') || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      var href = a.getAttribute('href');
+      if (!href || href.charAt(0) === '#' || /^(mailto|tel|javascript):/i.test(href) || !pending()) return;
+      e.preventDefault();
+      leave(a.href);
+    });
   })();
   $$('a[data-preview]').forEach(function (a) {
     a.addEventListener('click', function (e) {
