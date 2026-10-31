@@ -298,6 +298,15 @@
     });
   }
 
+  /* A form's values also go to a Google Form when the page names one (data-gform): its answers fill a Google Sheet */
+  function gform(form, values) {
+    var g; try { g = JSON.parse(form.getAttribute('data-gform') || 'null'); } catch (e) { g = null; }
+    if (!g || !g.action) return null;
+    var body = new URLSearchParams();
+    Object.keys(values).forEach(function (k) { if (g[k] && values[k]) body.append(g[k], values[k]); });
+    return fetch(g.action, { method: 'POST', mode: 'no-cors', body: body });
+  }
+
   /* Newsletter sign-up: the admin panel saves it (/api/subscribe) and a window thanks the reader */
   function thanks(email, test) {
     var d = document.createElement('dialog');
@@ -324,6 +333,12 @@
       if (!form.checkValidity()) { form.reportValidity(); return; }
       var endpoint = form.getAttribute('data-endpoint');
       var done = function (ok, text) { msg.hidden = false; msg.innerHTML = text; if (ok) form.reset(); };
+      var sheet = gform(form, { first: (data.get('Name') || '').toString().trim(), last: (data.get('Surname') || '').toString().trim(), email: email, lang: RU ? 'ru' : 'en' });
+      if (!endpoint && sheet) {
+        sheet.then(function () { msg.hidden = true; form.reset(); thanks(email, false); })
+          .catch(function () { done(false, tr('The subscription could not be saved. Please try again later or write to ') + '<a href="mailto:' + form.getAttribute('data-mailto') + '">' + form.getAttribute('data-mailto') + '</a>.'); });
+        return;
+      }
       if (!endpoint && form.hasAttribute('data-test-copy')) { msg.hidden = true; form.reset(); thanks(email, true); return; }
       if (!endpoint) {
         var body = encodeURIComponent(tr('Please add me to the Minsk Dialogue mailing list.')) + '%0D%0A%0D%0A' + encodeURIComponent(tr('Name: ')) +
@@ -347,7 +362,8 @@
 
   /* Last Monday: a question or comment for the hosts (saved in the admin panel, Podcasts › Listener questions) */
   $$('form[data-question]').forEach(function (form) {
-    var msg = $('.ask__msg', form);
+    var msg = $('.ask__msg', form), box = $('textarea', form);
+    box.addEventListener('input', function () { box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight + 2, 320) + 'px'; });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (!form.checkValidity()) { form.reportValidity(); return; }
@@ -356,14 +372,19 @@
       var endpoint = form.getAttribute('data-endpoint'), mailto = form.getAttribute('data-mailto');
       var write = '<a href="mailto:' + mailto + '">' + mailto + '</a>.';
       var done = function (ok, text) { msg.hidden = false; msg.innerHTML = text; if (ok) form.reset(); };
-      if (!endpoint) {
+      var sheet = gform(form, { text: (data.get('text') || '').toString().trim() });       // the show's Google Form
+      if (!endpoint && !sheet) {
         location.href = 'mailto:' + mailto + '?subject=' + encodeURIComponent(form.getAttribute('data-subject')) + '&body=' + encodeURIComponent(data.get('text') || '');
         done(true, tr('Your email app should open with your message. If it does not, write to ') + write);
         return;
       }
-      fetch(endpoint, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
-        .then(function (r) { if (!r.ok) throw new Error(r.status); done(true, tr('Thank you! Your message has reached the hosts.')); })
-        .catch(function () { done(false, tr('The message could not be sent. Please try again later or write to ') + write); });
+      var admin = endpoint ? fetch(endpoint, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); }) : null;
+      Promise.all([sheet, admin].filter(Boolean).map(function (p) { return p.then(function () { return true; }, function () { return false; }); }))
+        .then(function (ok) {
+          if (ok.indexOf(true) >= 0) done(true, tr('Thank you! Your message has reached the hosts.'));
+          else done(false, tr('The message could not be sent. Please try again later or write to ') + write);
+        });
     });
   });
 

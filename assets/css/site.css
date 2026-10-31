@@ -73,11 +73,11 @@ h1, h2, h3 { text-wrap: balance; }
 
 /* ---------- Header ---------- */
 .header { background: var(--white); border-bottom: 1px solid var(--line); position: relative; z-index: 20; }
-.header__in { padding-block: 18px; display: flex; flex-wrap: nowrap; align-items: center; gap: 16px 56px; }
+.header__in { padding-block: 18px; display: flex; flex-wrap: nowrap; align-items: center; gap: 16px 48px; }
 .logo { display: block; flex: none; }
 .logo img { display: block; height: 96px; width: auto; }
 .mainnav { flex: 0 1 auto; min-width: 0; max-width: 100%; overflow-x: auto; display: flex; flex-wrap: nowrap; gap: 34px; white-space: nowrap; font-size: 17px; font-weight: 500; scrollbar-width: none; }
-@media (min-width: 1100px) and (max-width: 1279px) { .header__in { gap: 16px 40px; } .mainnav { gap: 26px; font-size: 16px; } }
+@media (min-width: 1100px) and (max-width: 1279px) { .header__in { gap: 16px 32px; } .mainnav { font-size: 15.5px; } }
 .mainnav::-webkit-scrollbar { display: none; }
 .mainnav > a, .dd__btn { padding: 12px 0; display: flex; align-items: center; gap: 6px; }
 .mainnav a[aria-current="page"], .mainnav a[aria-current="true"] { color: var(--link); }
@@ -90,7 +90,9 @@ h1, h2, h3 { text-wrap: balance; }
 .search-btn { margin-left: auto; width: 48px; height: 48px; border: 1px solid var(--line); background: var(--white); border-radius: 999px; display: flex; align-items: center; justify-content: center; color: var(--ink); flex: none; }
 .search-btn:hover { border-color: var(--link); color: var(--link); }
 @media (min-width: 1100px) {
-  .mainnav { overflow: visible; }
+  /* the items spread between the logo and the search button: the same space after the logo as before the button */
+  .mainnav { overflow: visible; flex: 1 1 auto; justify-content: space-between; gap: 12px; }
+  .search-btn { margin-left: 0; }
   .dd:hover .dd__menu, .dd:focus-within .dd__menu, .dd.is-open .dd__menu { display: block; }
   .dd:hover .dd__btn svg, .dd.is-open .dd__btn svg { transform: rotate(180deg); }
 }
@@ -438,12 +440,12 @@ p.embed-alt, .prose p.embed-alt { margin-top: 10px; font-family: var(--sans); fo
 .ep-aside { align-self: flex-start; }
 .ep-aside__box .rows { display: flex; flex-direction: column; border-top: 1px solid var(--line); margin-top: 6px; }
 /* Last Monday: questions and comments for the hosts */
-.ask { border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 2px; background: var(--white); padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.ask { border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 2px; background: var(--white); padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
 .ep-aside__box .ask { margin-block: 4px 6px; }
 .ask__h, .ep-aside__box .ask__h { font-family: var(--serif); font-weight: 600; font-size: 19px; line-height: 1.3; color: var(--ink); }
 .ep-aside__box .ask__text, .ask__text { font-size: 14px; line-height: 1.55; color: var(--ink-soft); }
 .ask__form { display: flex; flex-direction: column; gap: 10px; }
-.ask__form textarea { width: 100%; min-height: 96px; resize: vertical; border: 1px solid var(--line-input); border-radius: 3px; padding: 10px 12px; font: inherit; font-size: 15px; color: var(--ink); background: var(--white); }
+.ask__form textarea { width: 100%; min-height: 64px; resize: vertical; border: 1px solid var(--line-input); border-radius: 3px; padding: 10px 12px; font: inherit; font-size: 15px; color: var(--ink); background: var(--white); }
 .ask__form textarea:focus { outline: 2px solid var(--link); outline-offset: 1px; }
 .ask__form button { align-self: flex-start; height: 40px; padding: 0 18px; background: var(--accent); color: var(--white); border: 0; border-radius: 3px; font-weight: 500; font-size: 15px; cursor: pointer; }
 .ask__form button:hover { background: var(--accent-dark); }
@@ -451,6 +453,9 @@ p.embed-alt, .prose p.embed-alt { margin-top: 10px; font-family: var(--sans); fo
 .ask__msg a { color: var(--link); text-decoration: underline; }
 .ask .hp { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
 .ask--wide { max-width: 720px; }
+.ask--wide .ask__form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.ask--wide .ask__msg { grid-column: 1 / -1; }
+@media (max-width: 560px) { .ask--wide .ask__form { grid-template-columns: minmax(0, 1fr); } }
 .ep-aside__box .row { padding: 14px 0; }
 @media (max-width: 1000px) { .ep-aside { max-width: none; } }
 
