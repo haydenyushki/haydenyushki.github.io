@@ -267,9 +267,9 @@ h1, h2, h3 { text-wrap: balance; }
 .footer__in { padding-block: 56px 28px; }
 .footer__top { display: flex; flex-wrap: wrap; gap: 40px 56px; justify-content: space-between; }
 .footer__brand { flex: 1 1 300px; max-width: 400px; display: flex; flex-direction: column; align-items: flex-start; }
-.footer__brand-in { display: flex; flex-direction: column; gap: 20px; }
+.footer__brand-in { display: flex; flex-direction: column; align-items: center; gap: 20px; }      /* the buttons centred under the logo */
 .footer__brand img { display: block; height: 96px; width: auto; }
-.footer__soc { display: flex; justify-content: space-between; gap: 4px; }
+.footer__soc { display: flex; justify-content: center; gap: 8px; }
 .footer__soc a { width: 32px; height: 32px; border: 1px solid var(--footer-soc); border-radius: 999px; display: flex; align-items: center; justify-content: center; color: var(--white); }
 .footer__soc a:hover { border-color: var(--pale-2); color: var(--white); }
 .footer__contact { font-size: 13px; line-height: 1.7; color: var(--pale-3); }
