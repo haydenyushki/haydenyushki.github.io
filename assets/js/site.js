@@ -15,7 +15,10 @@
       'Ваш адрес добавлен в рассылку. Мы будем сообщать вам о самых интересных новостях, публикациях и мероприятиях «Минского диалога».',
     'The subscription could not be saved. Please try again later or write to ': 'Не удалось оформить подписку. Попробуйте позже или напишите на ',
     'Your email app should open with a subscription request. If it does not, write to ': 'Должно открыться почтовое приложение с запросом на подписку. Если этого не произошло, напишите на ',
-    'Please add me to the Minsk Dialogue mailing list.': 'Прошу добавить меня в рассылку «Минского диалога».', 'Name: ': 'Имя: '
+    'Please add me to the Minsk Dialogue mailing list.': 'Прошу добавить меня в рассылку «Минского диалога».', 'Name: ': 'Имя: ',
+    'Thank you! Your message has reached the hosts.': 'Спасибо! Ваше сообщение получено.',
+    'The message could not be sent. Please try again later or write to ': 'Не удалось отправить сообщение. Попробуйте позже или напишите на ',
+    'Your email app should open with your message. If it does not, write to ': 'Должно открыться почтовое приложение с вашим сообщением. Если этого не произошло, напишите на '
   } : {};
   function tr(s) { return TEXT[s] || s; }
   function results(n) {
@@ -317,6 +320,28 @@
           done(false, tr('The subscription could not be saved. Please try again later or write to ') + '<a href="mailto:' +
             form.getAttribute('data-mailto') + '">' + form.getAttribute('data-mailto') + '</a>.');
         });
+    });
+  });
+
+  /* Last Monday: a question or comment for the hosts (saved in the admin panel, Podcasts › Listener questions) */
+  $$('form[data-question]').forEach(function (form) {
+    var msg = $('.ask__msg', form);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+      var data = new FormData(form);
+      data.set('page', location.pathname);
+      var endpoint = form.getAttribute('data-endpoint'), mailto = form.getAttribute('data-mailto');
+      var write = '<a href="mailto:' + mailto + '">' + mailto + '</a>.';
+      var done = function (ok, text) { msg.hidden = false; msg.innerHTML = text; if (ok) form.reset(); };
+      if (!endpoint) {
+        location.href = 'mailto:' + mailto + '?subject=' + encodeURIComponent(form.getAttribute('data-subject')) + '&body=' + encodeURIComponent(data.get('text') || '');
+        done(true, tr('Your email app should open with your message. If it does not, write to ') + write);
+        return;
+      }
+      fetch(endpoint, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); done(true, tr('Thank you! Your message has reached the hosts.')); })
+        .catch(function () { done(false, tr('The message could not be sent. Please try again later or write to ') + write); });
     });
   });
 

@@ -243,7 +243,7 @@ body.plain{background:#F4F6F9;font-family:Roboto,Arial,sans-serif;font-size:14px
 .nl-pal{display:flex;width:100%;align-items:center;gap:12px;height:44px;padding:0 12px;border:1px solid #E1E7EF;border-radius:4px;margin-bottom:8px;background:#FFFFFF;text-align:left;cursor:grab}
 .nl-pal:hover{border-color:#9FB4CD}
 .nl-canvas.over{outline:2px dashed #0B4F9C;outline-offset:-6px}
-.nl-block{position:relative;cursor:pointer;outline:0}
+.nl-block{position:relative;cursor:pointer;outline:0;display:flow-root}      /* holds its blocks' margins: a click there selects this block */
 .nl-block:hover{box-shadow:inset 0 0 0 1px #9FB4CD}
 .nl-block.on{box-shadow:inset 0 0 0 2px #0B4F9C}
 .nl-block a{pointer-events:none}
@@ -329,3 +329,35 @@ body.plain{background:#F4F6F9;font-family:Roboto,Arial,sans-serif;font-size:14px
 @media (hover:none){
   .g-tile .g-star,.g-x{opacity:1!important}
 }
+
+/* tick boxes (programmes of a research item) */
+.checks{display:flex;flex-direction:column;gap:8px}
+.check{display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer}
+.check input{width:16px;height:16px;accent-color:#0B4F9C;flex:none;margin:0}
+
+/* text editor: the text scrolls inside the box, so the toolbar stays in view; pictures can be dragged */
+.editor .doc{max-height:68vh;overflow-y:auto}
+.doc ol{list-style:decimal}
+.doc img{display:block;max-width:100%;height:auto;margin:6px 0;cursor:grab;border-radius:2px}
+.doc img.dragging{opacity:.4}
+.doc .drop-line{box-shadow:0 -3px 0 #0B4F9C}
+.doc .drop-line.drop-after{box-shadow:0 3px 0 #0B4F9C}
+.tb{flex-wrap:wrap}
+
+/* English / Russian tabs: what each version is */
+.ltabs a{align-items:center}
+.lchip{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;font-size:11.5px;font-weight:500;letter-spacing:.01em;line-height:1}
+.lchip--published{background:#E5F2EA;color:#2E7D4F}
+.lchip--scheduled{background:#E8F0F9;color:#0B4F9C}
+.lchip--draft,.lchip--saved{background:#EEF2F6;color:#51627A}
+.lchip--empty{background:#FFFFFF;color:#8A99AD;border:1px dashed #B9C6D6}
+.lchip--unsaved{background:#FDF0DC;color:#9A5B00}
+.lang-note{margin:-6px 0 18px}
+.lang-note .link{font-size:inherit}
+
+/* About: sections, each a name and a text */
+.about-secs{display:flex;flex-direction:column;gap:14px}
+.about-sec{border:1px solid #E1E7EF;border-radius:6px;padding:12px;background:#FBFCFD}
+.about-sec.dragging{opacity:.5}
+
+.badge-n{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:#C2382E;color:#FFFFFF;font-size:12px;font-weight:600}
