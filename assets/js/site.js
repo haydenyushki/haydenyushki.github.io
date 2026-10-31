@@ -363,6 +363,15 @@
     });
   });
 
+  /* YouTube's 1280 px picture of a video; videos without one get a 120 px stand-in (or an error): then its 480 px one */
+  function ytPoster(img) {
+    function smaller() { if (img.src.indexOf('maxresdefault') > 0) img.src = img.src.replace('maxresdefault', 'hqdefault'); }
+    img.addEventListener('error', smaller);
+    img.addEventListener('load', function () { if (img.naturalWidth < 200) smaller(); });
+    if (img.complete && img.naturalWidth && img.naturalWidth < 200) smaller();
+  }
+  $$('img[data-yt-poster]').forEach(ytPoster);
+
   /* Site search (runs on /en/search/ and /search/) */
   var sForm = $('#search-form');
   if (sForm) {
@@ -400,7 +409,7 @@
       hits.sort(function (a, b) { return b._score - a._score || (a.d < b.d ? 1 : -1); });
       countEl.textContent = results(hits.length);
       var raw = q.split(/\s+/).filter(Boolean);
-      out.innerHTML = hits.map(function (d) {
+      out.innerHTML = hits.filter(function (d) { return /^(https?:\/\/|\/(?!\/))/i.test(d.u || ''); }).map(function (d) {     // web and on-site links only
         var meta = '<span class="kind">' + esc(d.k) + '</span>' + (d.a ? ' · ' + esc(d.a) : '') + (d.dl ? ' · ' + esc(d.dl) : '');
         var thumb = d.i ? '<span class="row__thumb"><img src="' + esc(d.i) + '" alt="" loading="lazy"></span>' : '';
         var ext = d.e ? ' target="_blank" rel="noopener"' : '';

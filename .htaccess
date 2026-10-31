@@ -1,0 +1,28 @@
+# Written by build/build_site.py from build/security.py; edit those, not this file.
+Options -Indexes
+ServerSignature Off
+FileETag MTime Size
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+  RewriteRule (^|/)\.(?!well-known/) - [F]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self' https:; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.mave.digital; connect-src 'self' https://docs.google.com; form-action 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+  Header always unset X-Powered-By
+</IfModule>
+
+ErrorDocument 404 /404.html
+<If "%{REQUEST_URI} =~ m#^/en/#">
+  ErrorDocument 404 /en/404.html
+</If>
