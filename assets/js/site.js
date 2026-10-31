@@ -14,16 +14,10 @@
     'Your e-mail has been added to our list. We will keep you updated on the most interesting news, publications and events of the Minsk Dialogue.':
       'Ваш адрес добавлен в рассылку. Мы будем сообщать вам о самых интересных новостях, публикациях и мероприятиях «Минского диалога».',
     'The subscription could not be saved. Please try again later or write to ': 'Не удалось оформить подписку. Попробуйте позже или напишите на ',
-    'Your email app should open with a subscription request. If it does not, write to ': 'Должно открыться почтовое приложение с запросом на подписку. Если этого не произошло, напишите на ',
-    'Please add me to the Minsk Dialogue mailing list.': 'Прошу добавить меня в рассылку «Минского диалога».', 'Name: ': 'Имя: ',
     'Thank you! Your message has reached the hosts.': 'Спасибо! Ваше сообщение получено.',
     'Thank you for subscribing to the Minsk Dialogue newsletter!': 'Спасибо за подписку на рассылку «Минского диалога»!',
     'We will send news, research and events to ': 'Мы будем присылать новости, исследования и анонсы мероприятий на адрес ',
-    'This is the test copy of the website, so the address is not saved. On the real website it goes straight to the subscriber list in the admin panel.':
-      'Это тестовая копия сайта, поэтому адрес не сохраняется. На настоящем сайте он сразу попадает в список подписчиков в админ-панели.',
-    'Close': 'Закрыть',
-    'The message could not be sent. Please try again later or write to ': 'Не удалось отправить сообщение. Попробуйте позже или напишите на ',
-    'Your email app should open with your message. If it does not, write to ': 'Должно открыться почтовое приложение с вашим сообщением. Если этого не произошло, напишите на '
+    'The message could not be sent. Please try again later or write to ': 'Не удалось отправить сообщение. Попробуйте позже или напишите на '
   } : {};
   function tr(s) { return TEXT[s] || s; }
   function results(n) {
@@ -308,13 +302,12 @@
   }
 
   /* Newsletter sign-up: the admin panel saves it (/api/subscribe) and a window thanks the reader */
-  function thanks(email, test) {
+  function thanks(email) {
     var d = document.createElement('dialog');
     d.className = 'thanks';
     d.setAttribute('aria-labelledby', 'thanks-h');
     d.innerHTML = '<h2 id="thanks-h" class="thanks__h">' + tr('Thank you for subscribing to the Minsk Dialogue newsletter!') + '</h2>' +
       '<p class="thanks__text">' + tr('We will send news, research and events to ') + '<b></b>.</p>' +
-      (test ? '<p class="thanks__note">' + tr('This is the test copy of the website, so the address is not saved. On the real website it goes straight to the subscriber list in the admin panel.') + '</p>' : '') +
       '<button class="thanks__btn" type="button">' + tr('Close') + '</button>';
     $('b', d).textContent = email;
     document.body.appendChild(d);
@@ -324,43 +317,31 @@
     if (d.showModal) d.showModal(); else d.setAttribute('open', '');
     $('.thanks__btn', d).focus();
   }
+  function writeTo(form) {
+    var m = form.getAttribute('data-mailto');
+    return '<a href="mailto:' + m + '">' + m + '</a>.';
+  }
   $$('form[data-newsletter]').forEach(function (form) {
     var msg = $('.newsletter__msg', form);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      if (!form.checkValidity()) { form.reportValidity(); return; }
       var data = new FormData(form);
       var email = (data.get('Email') || '').toString().trim();
-      if (!form.checkValidity()) { form.reportValidity(); return; }
       var endpoint = form.getAttribute('data-endpoint');
-      var done = function (ok, text) { msg.hidden = false; msg.innerHTML = text; if (ok) form.reset(); };
-      var sheet = gform(form, { first: (data.get('Name') || '').toString().trim(), last: (data.get('Surname') || '').toString().trim(), email: email, lang: RU ? 'ru' : 'en' });
-      if (!endpoint && sheet) {
-        sheet.then(function () { msg.hidden = true; form.reset(); thanks(email, false); })
-          .catch(function () { done(false, tr('The subscription could not be saved. Please try again later or write to ') + '<a href="mailto:' + form.getAttribute('data-mailto') + '">' + form.getAttribute('data-mailto') + '</a>.'); });
-        return;
-      }
-      if (!endpoint && form.hasAttribute('data-test-copy')) { msg.hidden = true; form.reset(); thanks(email, true); return; }
-      if (!endpoint) {
-        var body = encodeURIComponent(tr('Please add me to the Minsk Dialogue mailing list.')) + '%0D%0A%0D%0A' + encodeURIComponent(tr('Name: ')) +
-          encodeURIComponent(((data.get('Name') || '') + ' ' + (data.get('Surname') || '')).trim()) + '%0D%0AE-mail: ' + encodeURIComponent(email);
-        location.href = 'mailto:' + form.getAttribute('data-mailto') + '?subject=Newsletter%20subscription&body=' + body;
-        done(true, tr('Your email app should open with a subscription request. If it does not, write to ') + '<a href="mailto:' +
-          form.getAttribute('data-mailto') + '">' + form.getAttribute('data-mailto') + '</a>.');
-        return;
-      }
+      var failed = function () { msg.hidden = false; msg.innerHTML = tr('The subscription could not be saved. Please try again later or write to ') + writeTo(form); };
+      if (!endpoint) { failed(); return; }
       fetch(endpoint, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
         .then(function (r) {
           if (!r.ok) throw new Error(r.status);
-          msg.hidden = true; form.reset(); thanks(email, false);
+          msg.hidden = true; form.reset(); thanks(email);
         })
-        .catch(function () {
-          done(false, tr('The subscription could not be saved. Please try again later or write to ') + '<a href="mailto:' +
-            form.getAttribute('data-mailto') + '">' + form.getAttribute('data-mailto') + '</a>.');
-        });
+        .catch(failed);
     });
   });
 
-  /* Last Monday: a question or comment for the hosts (saved in the admin panel, Podcasts › Listener questions) */
+  /* Last Monday: a question or comment for the hosts, saved in the admin panel (Podcasts › Listener questions) and
+     in the show's own Google Form (data-gform), whose answers the hosts read */
   $$('form[data-question]').forEach(function (form) {
     var msg = $('.ask__msg', form), box = $('textarea', form);
     box.addEventListener('input', function () { box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight + 2, 320) + 'px'; });
@@ -369,21 +350,15 @@
       if (!form.checkValidity()) { form.reportValidity(); return; }
       var data = new FormData(form);
       data.set('page', location.pathname);
-      var endpoint = form.getAttribute('data-endpoint'), mailto = form.getAttribute('data-mailto');
-      var write = '<a href="mailto:' + mailto + '">' + mailto + '</a>.';
+      var endpoint = form.getAttribute('data-endpoint');
       var done = function (ok, text) { msg.hidden = false; msg.innerHTML = text; if (ok) form.reset(); };
-      var sheet = gform(form, { text: (data.get('text') || '').toString().trim() });       // the show's Google Form
-      if (!endpoint && !sheet) {
-        location.href = 'mailto:' + mailto + '?subject=' + encodeURIComponent(form.getAttribute('data-subject')) + '&body=' + encodeURIComponent(data.get('text') || '');
-        done(true, tr('Your email app should open with your message. If it does not, write to ') + write);
-        return;
-      }
+      var sheet = gform(form, { text: (data.get('text') || '').toString().trim() });
       var admin = endpoint ? fetch(endpoint, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } })
         .then(function (r) { if (!r.ok) throw new Error(r.status); }) : null;
       Promise.all([sheet, admin].filter(Boolean).map(function (p) { return p.then(function () { return true; }, function () { return false; }); }))
         .then(function (ok) {
           if (ok.indexOf(true) >= 0) done(true, tr('Thank you! Your message has reached the hosts.'));
-          else done(false, tr('The message could not be sent. Please try again later or write to ') + write);
+          else done(false, tr('The message could not be sent. Please try again later or write to ') + writeTo(form));
         });
     });
   });
