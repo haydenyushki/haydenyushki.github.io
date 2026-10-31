@@ -432,7 +432,8 @@ p.embed-alt, .prose p.embed-alt { margin-top: 10px; font-family: var(--sans); fo
 .ep-main { flex: 2 1 600px; min-width: 0; max-width: 760px; }
 .ep-main .sec-h { margin-bottom: 16px; }
 .ep-main .sec-h + .prose, .ep-main .sec-h + .embed { margin-top: 0; }
-.ep-main section + section { margin-top: 56px; }
+.ep-main section + section { margin-top: 36px; }
+.ep-main .prose > :last-child { margin-bottom: 0; }
 .ep-aside { flex: 1 1 300px; min-width: 0; max-width: 400px; display: flex; flex-direction: column; }
 .ep-aside__box { flex: 1 1 auto; border: 1px solid var(--line); border-radius: 2px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
 .ep-aside__box h2 { font-family: var(--serif); font-weight: 600; font-size: 22px; }
